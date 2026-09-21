@@ -66,6 +66,8 @@
   .ing-sec{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:14px 0 4px}
   .ing{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
   .ing .q{color:var(--accent);font-weight:600;min-width:90px}
+  .ing .ref{color:var(--muted);font-size:13px;margin-left:6px;white-space:nowrap}
+  .sub-tag{display:inline-block;vertical-align:middle;margin-left:8px;font-family:'Inter',sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent-2);border:1px solid var(--accent-2);border-radius:999px;padding:1px 9px}
   .mclose{position:absolute;top:18px;right:22px;background:#fff;border:none;width:38px;height:38px;border-radius:50%;font-size:20px;cursor:pointer;box-shadow:var(--shadow)}
   .modal .mwrap{position:relative}
 
@@ -137,6 +139,9 @@ const H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
 function fromPost(p){
   const pl = p.payload || {};
   const base = { _type: p.kind, name: p.title, description: p.description, public_photo_url: p.photo_url };
+  base.subrecipes = (pl.subrecipes || []).map(r => ({
+    name:r.name, description:r.description, servings:r.servings, recipe_ingredients: r.ingredients || []
+  }));
   if(p.kind === 'recipe'){
     base.servings = pl.servings;
     base.recipe_ingredients = pl.ingredients || [];
@@ -198,7 +203,7 @@ function ingredientsHtml(recipe){
     if(sec) html += '<div class="ing-sec">'+esc(sec)+'</div>';
     bySec[sec].forEach(i => {
       const q = [i.quantity, i.unit].filter(Boolean).join(' ');
-      html += '<div class="ing"><span class="q">'+esc(q)+'</span><span>'+esc(i.name)+'</span></div>';
+      html += '<div class="ing"><span class="q">'+esc(q)+'</span><span>'+esc(i.name)+(i.ref?'<span class="ref">(viz recept)</span>':'')+'</span></div>';
     });
   });
   return html;
@@ -222,6 +227,12 @@ function openModal(item){
     const ih = ingredientsHtml(item);
     if(ih) body += '<h4 class="serif">Ingredience</h4>'+ih;
   }
+  (item.subrecipes || []).forEach(sub => {
+    body += '<h4 class="serif">'+esc(sub.name)+'<span class="sub-tag">polotovar</span>'+(sub.servings?' · '+sub.servings+' porcí':'')+'</h4>';
+    const ih = ingredientsHtml(sub);
+    if(ih) body += '<div class="ing-sec">Ingredience</div>'+ih;
+    if(sub.description) body += '<div class="ing-sec">Postup</div><div class="desc" style="margin-top:4px">'+esc(sub.description)+'</div>';
+  });
   document.getElementById('mbody').innerHTML = body;
   document.getElementById('ov').classList.add('open');
 }
